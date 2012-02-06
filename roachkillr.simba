@@ -4,7 +4,8 @@ program new;
 {$I srl/srl/misc/PaintSmart.simba}
 
 const
-  version = '1.0';
+  ScriptVersion = '1.0';
+  UseAutoChecker = true;
 
 var
   x, y: integer;
@@ -362,12 +363,51 @@ begin
     wait(20+random(50));
 end;
 
+//Written by Harry/Shuttleu
+procedure AutoUpdateMe;
+var Neifile:integer;
+    OnlineVersion, NewScript, NeiFeilNennen:string;
 begin
-  Smart_Server := 10;
-  setupsrl;
-  W_WalkToHole();
-  if(W_FindObject(x,y,790292,1,6.25, 21.30,0.38,0.77,0.39,0.80,0.41,0.46,'Hole','nter'))then
-    mouse(x,y,0,0,true);
+  if UseAutoChecker then
+  begin
+    writeln('Checking for script updates...');
+    OnlineVersion := GetPage('https://raw.github.com/getsalty/cockroach/master/version.txt');
+    writeln(OnlineVersion);
+    writeln(ScriptVersion)
+    if (trim(OnlineVersion) > ScriptVersion) then
+    begin
+      writeLn('Newer script version online!');
+      writeLn('Autoupdating to newer version.');
+      NewScript := GetPage('https://raw.github.com/getsalty/cockroach/master/roachkillr.simba');
+
+      NeiFeilNennen := ScriptPath+ 'cockroach v'+OnlineVersion;
+      Neifile := Rewritefile(NeiFeilNennen, true);
+      try
+        WriteFileString(Neifile, NewScript);
+      except
+        begin
+          writeLn('Fatal error writing to '+NeiFeilNennen+'!!');
+          terminatescript;
+        end;
+      end;
+      CloseFile(Neifile);
+      writeLn('New script downloaded to '+NeiFeilNennen+'!! Please use this one!!');
+      TerminateScript;
+    end else
+      writeLn('You have the latest version of the script!');
+  end else
+    WriteLn('!!!!! Not checking for latest version, you may be outdated!');
+end;
+
+
+
+begin
+  AutoUpdateMe();
+  //Smart_Server := 10;
+  //setupsrl;
+  //W_WalkToHole();
+  //if(W_FindObject(x,y,790292,1,6.25, 21.30,0.38,0.77,0.39,0.80,0.41,0.46,'Hole','nter'))then
+    //mouse(x,y,0,0,true);
   //wait(3000+random(2000));
   //RadialWalk(AutoColorLadder, 110, 130, 64, 2, 2);
   //wait(2000+random(1200));
