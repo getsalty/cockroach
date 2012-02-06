@@ -1,0 +1,378 @@
+program new;
+{$DEFINE SMART}
+{$I SRL/SRL.simba}
+{$I srl/srl/misc/PaintSmart.simba}
+
+const
+  version = '1.0';
+
+var
+  x, y: integer;
+
+procedure W_PrintProggy(text:string;xs,ys,xe,ye,color:integer);
+var
+  background: TBox;
+  x,y,i: Integer;
+  boxpoints: Array of TPoint;
+begin
+  background.X1:= xs;
+  background.Y1:= ys;
+  background.X2:= xe;
+  background.Y2:= ye;
+  setarraylength(boxpoints, ((background.X2-background.X1)*(background.Y2-background.Y1)));
+  i:=0;
+  for x:= background.X1 to background.X2-1 do
+  begin
+    for y:= background.Y1 to background.Y2-1 do
+    begin
+      boxpoints[i]:= point(x,y);
+      inc(i);
+    end;
+  end;
+  SMART_DrawDotsEx(false, boxpoints, color);
+
+  SMART_DrawText(xs+1, ys+1, 'UpChars', text, ClLime);
+end;
+
+function W_FindObject(var fx, fy:integer; Color, Tol:integer; SpeedModOne, SpeedModTwo, Xlow, Xhigh, Ylow, Yhigh, Zlow, Zhigh: Extended; name, uptext:string): Boolean;
+var
+  arP, arAP: TPointArray;
+  arC, arUC: TIntegerArray;
+  ararP: T2DPointArray;
+  tmpCTS, i, j, arL, arL2: Integer;
+  P: TPoint;
+  X, Y, Z: Extended;
+begin
+  tmpCTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(2);
+  SetColorSpeed2Modifiers(speedmodone, speedmodtwo);
+  if not(FindColorsTolerance(arP, color, MSX1, MSY1, MSX2, MSY2, tol)) then
+  begin
+    Writeln('Failed to find the '+name+'.');
+    ColorToleranceSpeed(tmpCTS);
+    SetColorSpeed2Modifiers(0.2, 0.2);
+    Exit;
+  end;
+  arC := GetColors(arP);
+  arUC := arC;
+  ClearSameIntegers(arUC);
+  arL := High(arUC);
+  arL2 := High(arC);
+  for i := 0 to arL do
+  begin
+    ColorToXYZ(arC[i], X, Y, Z);
+    if (X >= Xlow) and (X <= Xhigh) and (Y >= Ylow) and (Y <= Yhigh) and (Z >= Zlow) and (Z <= Zhigh) then
+    begin
+      for j := 0 to arL2 do
+      begin
+        if (arUC[i] = arC[j]) then
+        begin
+          SetLength(arAP, Length(arAP) + 1);
+          arAP[High(arAP)] := arP[j];
+        end;
+      end;
+    end;
+  end;
+  SortTPAFrom(arAP, Point(MSCX, MSCY));
+  ararP := SplitTPAEx(arAP, 10, 10);
+  arL := High(ararP);
+  for i := 0 to arL do
+  begin
+    if (Length(ararP[i]) < 10) then Continue;
+    P := MiddleTPA(ararP[i]);
+    MMouse(P.x, P.y, 5, 10);
+    Wait(100 + Random(100));
+    if (IsUpText(uptext)) then
+    begin;
+      Result := True;
+      Break;
+    end;
+  end;
+  ColorToleranceSpeed(tmpCTS);
+  SetColorSpeed2Modifiers(0.2, 0.2);
+  if (i = arL + 1) then
+  begin
+    Writeln('Could not find the '+name+'.');
+    Exit;
+  end;
+  GetMousePos(fx, fy);
+end;
+
+function FindRope(var fx, fy: integer): Boolean;
+var
+  arP, arAP: TPointArray;
+  arC, arUC: TIntegerArray;
+  ararP: T2DPointArray;
+  tmpCTS, i, j, arL, arL2: Integer;
+  P: TPoint;
+  X, Y, Z: Extended;
+begin
+  tmpCTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(2);
+  SetColorSpeed2Modifiers(0.04, 1.39);
+
+  if not(FindColorsTolerance(arP, 1196883, MSX1, MSY1, MSX2, MSY2, 9)) then
+  begin
+    Writeln('Failed to find the color, no object found.');
+    ColorToleranceSpeed(tmpCTS);
+    SetColorSpeed2Modifiers(0.2, 0.2);
+    Exit;
+  end;
+
+  arC := GetColors(arP);
+  arUC := arC;
+  ClearSameIntegers(arUC);
+  arL := High(arUC);
+  arL2 := High(arC);
+
+  for i := 0 to arL do
+  begin
+    ColorToXYZ(arC[i], X, Y, Z);
+
+    if (X >= 2.31) and (X <= 10.05) and (Y >= 2.41) and (Y <= 10.46) and (Z >= 0.53) and (Z <= 2.95) then
+    begin
+      for j := 0 to arL2 do
+      begin
+        if (arUC[i] = arC[j]) then
+        begin
+          SetLength(arAP, Length(arAP) + 1);
+          arAP[High(arAP)] := arP[j];
+        end;
+      end;
+    end;
+  end;
+
+  SortTPAFrom(arAP, Point(MSCX, MSCY));
+  ararP := SplitTPAEx(arAP, 10, 10);
+  arL := High(ararP);
+
+  for i := 0 to arL do
+  begin
+    if (Length(ararP[i]) < 10) then Continue;
+    P := MiddleTPA(ararP[i]);
+    MMouse(P.x, P.y, 5, 10);
+    Wait(100 + Random(100));
+    if (IsUpText('Climb')) then
+    begin;
+      Result := True;
+      Break;
+    end;
+  end;
+
+  ColorToleranceSpeed(tmpCTS);
+  SetColorSpeed2Modifiers(0.2, 0.2);
+
+  if (i = arL + 1) then
+  begin
+    Writeln('FindObject could not find object.');
+    Exit;
+  end;
+
+  GetMousePos(fx, fy);
+end;
+
+
+function AutoColorLadder: Integer;
+var
+  arP: TPointArray;
+  arC: TIntegerArray;
+  tmpCTS, i, arL: Integer;
+  X, Y, Z: Extended;
+begin
+  tmpCTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(2);
+  SetColorSpeed2Modifiers(0.53, 3.27);
+
+  FindColorsSpiralTolerance(MMCX, MMCY, arP, 536922, MMX1, MMY1, MMX2, MMY2, 2);
+  if (Length(arP) = 0) then
+  begin
+    Writeln('Failed to find the color, no result.');
+    ColorToleranceSpeed(tmpCTS);
+    SetColorSpeed2Modifiers(0.2, 0.2);
+    Exit;
+  end;
+
+  arC := GetColors(arP);
+  ClearSameIntegers(arC);
+  arL := High(arC);
+
+  for i := 0 to arL do
+  begin
+    ColorToXYZ(arC[i], X, Y, Z);
+
+    if (X >= 4.70) and (X <= 5.90) and (Y >= 3.50) and (Y <= 4.80) and (Z >= 0.20) and (Z <= 1.25) then
+    begin
+      Result := arC[i];
+      Writeln('AutoColor = ' + IntToStr(arC[i]));
+      Break;
+    end;
+  end;
+
+  ColorToleranceSpeed(tmpCTS);
+  SetColorSpeed2Modifiers(0.2, 0.2);
+
+  if (i = arL + 1) then
+    Writeln('AutoColor failed in finding the color.');
+end;
+
+function AutoColorRoad: Integer;
+var
+  arP: TPointArray;
+  arC: TIntegerArray;
+  tmpCTS, i, arL: Integer;
+  X, Y, Z: Extended;
+begin
+  tmpCTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(2);
+  SetColorSpeed2Modifiers(23.89, 1.25);
+
+  FindColorsSpiralTolerance(MMCX, MMCY, arP, 5395278, MMX1, MMY1, MMX2, MMY2, 2);
+  if (Length(arP) = 0) then
+  begin
+    Writeln('Failed to find the color, no result.');
+    ColorToleranceSpeed(tmpCTS);
+    SetColorSpeed2Modifiers(0.2, 0.2);
+    Exit;
+  end;
+
+  arC := GetColors(arP);
+  ClearSameIntegers(arC);
+  arL := High(arC);
+
+  for i := 0 to arL do
+  begin
+    ColorToXYZ(arC[i], X, Y, Z);
+
+    if (X >= 7.35) and (X <= 8.35) and (Y >= 7.70) and (Y <= 8.98) and (Z >= 7.75) and (Z <= 9.22) then
+    begin
+      Result := arC[i];
+      Writeln('AutoColor = ' + IntToStr(arC[i]));
+      Break;
+    end;
+  end;
+
+  ColorToleranceSpeed(tmpCTS);
+  SetColorSpeed2Modifiers(0.2, 0.2);
+
+  if (i = arL + 1) then
+    Writeln('AutoColor failed in finding the color.');
+end;
+
+function AutoColorGrass: Integer;
+var
+  arP: TPointArray;
+  arC: TIntegerArray;
+  tmpCTS, i, arL: Integer;
+  X, Y, Z: Extended;
+begin
+  tmpCTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(2);
+  SetColorSpeed2Modifiers(0.66, 2.50);
+
+  FindColorsSpiralTolerance(MMCX, MMCY, arP, 2184788, MMX1, MMY1, MMX2, MMY2, 4);
+  if (Length(arP) = 0) then
+  begin
+    Writeln('Failed to find the color, no result.');
+    ColorToleranceSpeed(tmpCTS);
+    SetColorSpeed2Modifiers(0.2, 0.2);
+    Exit;
+  end;
+
+  arC := GetColors(arP);
+  ClearSameIntegers(arC);
+  arL := High(arC);
+
+  for i := 0 to arL do
+  begin
+    ColorToXYZ(arC[i], X, Y, Z);
+
+    if (X >= 4.99) and (X <= 8.43) and (Y >= 6.07) and (Y <= 10.38) and (Z >= 2.19) and (Z <= 3.59) then
+    begin
+      Result := arC[i];
+      Writeln('AutoColor = ' + IntToStr(arC[i]));
+      Break;
+    end;
+  end;
+
+  ColorToleranceSpeed(tmpCTS);
+  SetColorSpeed2Modifiers(0.2, 0.2);
+
+  if (i = arL + 1) then
+    Writeln('AutoColor failed in finding the color.');
+end;
+
+function AutoColorDirtHole: Integer;
+var
+  arP: TPointArray;
+  arC: TIntegerArray;
+  tmpCTS, i, arL: Integer;
+  H, S, L: Extended;
+  X, Y, Z: Extended;
+begin
+  tmpCTS := GetColorToleranceSpeed;
+  ColorToleranceSpeed(1);
+
+  FindColorsSpiralTolerance(MMCX, MMCY, arP, 2049883, MMX1, MMY1, MMX2, MMY2, 7);
+  if (Length(arP) = 0) then
+  begin
+    Writeln('Failed to find the color, no result.');
+    ColorToleranceSpeed(tmpCTS);
+    Exit;
+  end;
+
+  arC := GetColors(arP);
+  ClearSameIntegers(arC);
+  arL := High(arC);
+
+  for i := 0 to arL do
+  begin
+    ColorToHSL(arC[i], H, S, L);
+
+    if (H >= 9.15) and (H <= 12.52) and (S >= 44.24) and (S <= 55.39) and (L >= 22.92) and (L <= 25.12) then
+    begin
+      ColorToXYZ(arC[i], X, Y, Z);
+
+      if (X >= 6.45) and (X <= 7.35) and (Y >= 6.27) and (Y <= 7.40) and (Z >= 1.96) and (Z <= 2.48) then
+      begin
+        Result := arC[i];
+        Writeln('AutoColor = ' + IntToStr(arC[i]));
+        Break;
+      end;
+    end;
+  end;
+
+  ColorToleranceSpeed(tmpCTS);
+
+  if (i = arL + 1) then
+    Writeln('AutoColor failed in finding the color.');
+end;
+
+procedure W_WalkToHole();
+begin
+  RadialWalk(AutoColorRoad, 200, 300, 35, 3, 2);
+  while(ismoving)do
+    wait(20+random(50));
+  if(not(RadialWalk(AutoColorGrass, 200, 220, 80, -3, 3))) then
+    if(findsymbol(x,y,'minigame')) then
+      mouse(x,y,-3,2,true);
+  while(ismoving)do
+    wait(20+random(50));
+  RadialWalk(AutoColorDirtHole, 180, 210, 55, -3, 2);
+  while(ismoving)do
+    wait(20+random(50));
+end;
+
+begin
+  Smart_Server := 10;
+  setupsrl;
+  W_WalkToHole();
+  if(W_FindObject(x,y,790292,1,6.25, 21.30,0.38,0.77,0.39,0.80,0.41,0.46,'Hole','nter'))then
+    mouse(x,y,0,0,true);
+  //wait(3000+random(2000));
+  //RadialWalk(AutoColorLadder, 110, 130, 64, 2, 2);
+  //wait(2000+random(1200));
+  //if(W_FindObject(x,y,4146249,3,0.31, 0.15,4.69,6.92,4.88,7.19,4.55,6.67,'Stairs','limb'))then
+    //mouse(x,y,0,0,true);
+  //if(W_FindObject(x,y,3233397,17,0.11, 0.78,2.75,23.85,2.47,22.61,0.93,12.79,'Roach','ttack'))then
+    //mouse(x,y,0,0,true);
+end.
